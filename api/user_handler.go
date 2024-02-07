@@ -1,6 +1,8 @@
 package api
 
 import (
+	"context"
+
 	"github.com/FancyDogge/hotel-service/db"
 	"github.com/FancyDogge/hotel-service/types"
 	"github.com/gofiber/fiber/v2"
@@ -11,9 +13,19 @@ type UserHandler struct {
 	userStore db.UserStore //для возможности юзать разные интерфейсы
 }
 
+// new ?constructor?, в общем чтобы инициализировать хендлер, видимо.
+func NewUserHandler(userStore db.UserStore) *UserHandler {
+	return &UserHandler{
+		userStore: userStore,
+	}
+}
+
 func (h *UserHandler) HandleGetUser(c *fiber.Ctx) error {
-	id := c.Params("id") //fetching ID from url
-	user, err := h.userStore.GetUserByID(id)
+	var (
+		id  = c.Params("id") //fetching ID from url
+		ctx = context.Background()
+	)
+	user, err := h.userStore.GetUserByID(ctx, id)
 	if err != nil {
 		return err
 	}
