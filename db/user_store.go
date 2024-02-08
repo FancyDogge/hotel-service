@@ -14,6 +14,8 @@ const userColl = "users"
 // т.к. мы создаем интерфейс, потом можно будет сделать хоть postgres юзер стор, хоть mongodb, хоть in-memory
 type UserStore interface {
 	GetUserByID(context.Context, string) (*types.User, error)
+	GetUsers(context.Context) ([]*types.User, error)
+	CreateUser(context.Context, *types.User) (*types.User, error)
 }
 
 // Реализация интерфейса UserStore, заточенная под монго
@@ -26,11 +28,19 @@ type MongoUserStore struct {
 
 // Реализация/активация MongoUserStore, чтобы создать его и назначить в переменную. возвращает поинтер к монгобзерстор
 func NewMongoUserStore(client *mongo.Client) *MongoUserStore {
-
 	return &MongoUserStore{
 		client: client,
 		coll:   client.Database(DBNAME).Collection(userColl),
 	}
+}
+
+func (s *MongoUserStore) CreateUser(ctx context.Context, user *types.User) (*types.User, error) {
+	res, err := s.coll.InsertOne(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+	user.ID = res.InsertedID.(primitive.ObjectID) //manipulate the pointer and retern it. So every func using this user pointer will see the changes
+	return user, nil
 }
 
 // UserStore implementation in MongoUserStore
@@ -46,4 +56,16 @@ func (s *MongoUserStore) GetUserByID(ctx context.Context, id string) (*types.Use
 		return nil, err //empty pointer == nil
 	}
 	return &user, nil
+}
+
+func (s *MongoUserStore) GetUsers(ctx context.Context) ([]*types.User, error) {
+	cur, err := s.coll.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	var users []*types.User
+	if err := cur.All(ctx, &users); err != nil {
+		return []*types.User{}, nil
+	}
+	return users, nil
 }
