@@ -16,6 +16,8 @@ type UserStore interface {
 	GetUserByID(context.Context, string) (*types.User, error)
 	GetUsers(context.Context) ([]*types.User, error)
 	CreateUser(context.Context, *types.User) (*types.User, error)
+	DeleteUser(context.Context, string) (*types.User, error)
+	UpdateUser(c context.Context, filter, valuers bson.M) error
 }
 
 // Реализация интерфейса UserStore, заточенная под монго
@@ -54,6 +56,40 @@ func (s *MongoUserStore) GetUserByID(ctx context.Context, id string) (*types.Use
 	var user types.User
 	if err := s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&user); err != nil { //user as a pointer, чтобы после прогона ф-ции были изменения в юзере
 		return nil, err //empty pointer == nil
+	}
+	return &user, nil
+}
+
+func (s *MongoUserStore) UpdateUser(ctx context.Context, filter, values bson.M) error {
+	update := bson.D{
+		{
+			"$set", values,
+		},
+	}
+
+	_, err := s.coll.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *MongoUserStore) DeleteUser(ctx context.Context, id string) (*types.User, error) {
+	//validate id
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// пока что не нашел способ удалить юзера и вернуть его данные без 2х запросов к коллекции
+	var user types.User
+	if err := s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&user); err != nil {
+		return nil, err
+	}
+
+	_, err = s.coll.DeleteOne(ctx, bson.M{"_id": oid})
+	if err != nil {
+		return nil, err
 	}
 	return &user, nil
 }
