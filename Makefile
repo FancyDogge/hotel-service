@@ -3,6 +3,3 @@ build:
 
 run: build
 	@./bin/api
-
-test:
-	@got test -v ./...
