@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -29,7 +30,32 @@ type UpdateUserParams struct {
 	LastName  string `json:"lastName"`
 }
 
-func (params CreateUserParams) Validate() map[string]string {
+func (p UpdateUserParams) ToBSON() bson.M {
+	m := bson.M{} //map[string]interface{} => map[string]any
+	if len(p.FirstName) > 0 {
+		m["firstName"] = p.FirstName
+	}
+	if len(p.LastName) > 0 {
+		m["lastName"] = p.LastName
+	}
+	return m
+}
+
+// func (params UpdateUserParams) ValidateUpdateUser() map[string]string {
+// 	errors := map[string]string{}
+// 	if ok := params.FirstName; ok {
+// 		//do something here
+// 	}
+// 	if len(params.FirstName) < minFirstNameLen && params.FirstName != "" {
+// 		errors["firstName"] = fmt.Sprintf("firstName length should be at least %d characters", minFirstNameLen)
+// 	}
+// 	if len(params.LastName) < minLastNameLen && params.FirstName != "" {
+// 		errors["lastName"] = fmt.Sprintf("lastName length should be at least %d characters", minLastNameLen)
+// 	}
+// 	return errors
+// }
+
+func (params CreateUserParams) ValidateCreateUser() map[string]string {
 	errors := map[string]string{}
 	if len(params.FirstName) < minFirstNameLen {
 		errors["firstName"] = fmt.Sprintf("firstName length should be at least %d characters", minFirstNameLen)

@@ -28,7 +28,7 @@ func (h *UserHandler) HandlePostUser(c *fiber.Ctx) error {
 	if err := c.BodyParser(&params); err != nil { //парсит данные структуры вида params
 		return err
 	}
-	if errors := params.Validate(); len(errors) > 0 { //???????
+	if errors := params.ValidateCreateUser(); len(errors) > 0 { //???????
 		return c.JSON(errors)
 	}
 	user, err := types.NewUserFromParams(params)
@@ -46,17 +46,20 @@ func (h *UserHandler) HandlePostUser(c *fiber.Ctx) error {
 func (h *UserHandler) HandlePutUser(c *fiber.Ctx) error {
 	var (
 		id     = c.Params("id")
-		values bson.M
+		params types.UpdateUserParams
 	)
 	oid, err := primitive.ObjectIDFromHex(id) //разобраться почему если конвертинг типов ниже BodyParser, то ничего не работает
 	if err != nil {
 		return err
 	}
-	if err := c.BodyParser(&values); err != nil { //parse everything into these &params / all params are passed through fiber.Ctx vrode??
+	if err := c.BodyParser(&params); err != nil { //parse everything into these &params / all params are passed through fiber.Ctx vrode??
 		return err
 	}
+	// if errors := params.ValidateCreateUser(); len(errors) > 0 { //???????
+	// 	return c.JSON(errors)
+	// }
 	filter := bson.M{"_id": oid}
-	if err := h.userStore.UpdateUser(c.Context(), filter, values); err != nil {
+	if err := h.userStore.UpdateUser(c.Context(), filter, params); err != nil {
 		return err
 	}
 	return c.JSON(map[string]string{"updated": id})

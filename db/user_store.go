@@ -17,7 +17,7 @@ type UserStore interface {
 	GetUsers(context.Context) ([]*types.User, error)
 	CreateUser(context.Context, *types.User) (*types.User, error)
 	DeleteUser(context.Context, string) (*types.User, error)
-	UpdateUser(c context.Context, filter, valuers bson.M) error
+	UpdateUser(c context.Context, filter bson.M, params types.UpdateUserParams) error
 }
 
 // Реализация интерфейса UserStore, заточенная под монго
@@ -60,10 +60,10 @@ func (s *MongoUserStore) GetUserByID(ctx context.Context, id string) (*types.Use
 	return &user, nil
 }
 
-func (s *MongoUserStore) UpdateUser(ctx context.Context, filter, values bson.M) error {
+func (s *MongoUserStore) UpdateUser(ctx context.Context, filter bson.M, params types.UpdateUserParams) error {
 	update := bson.D{
 		{
-			"$set", values,
+			"$set", params.ToBSON(),
 		},
 	}
 
